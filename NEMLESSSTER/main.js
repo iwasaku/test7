@@ -16,8 +16,8 @@ var ASSETS = {
     "bg_sky": "./resource/bg_sky.png",
     "bg_floor": "./resource/bg_floor.png",
 
-    //"fallSE": "https://iwasaku.github.io/test3/SHU/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
-    "fallSE": "./resource/fall.mp3",
+    "fallSE": "https://iwasaku.github.io/test3/SHU/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
+    //"fallSE": "./resource/fall.mp3",
 };
 
 // 定義
@@ -476,8 +476,8 @@ tm.define("Player", {
             animations: {
                 "run": [0, 2, "run", 10],
                 "jump0": [2, 3, "jump1", 13],
-                "jump1": [1, 2, "run", 1],
-                "dead": [1, 2, "dead", 1],
+                "jump1": [0, 1, "run", 1],
+                "dead": [0, 1, "dead", 1],
             }
         });
 
