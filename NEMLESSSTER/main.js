@@ -392,7 +392,7 @@ tm.define("GameScene", {
                 nowDistance = Math.floor(this.frame / app.fps);
 
                 if (this.frame % 120 === 0) {
-                    var enemy = Enemy(myRandom(8, 12)); // 最低速度は7が限界のはず
+                    var enemy = Enemy(myRandom(7, 12)); // 最低速度は7が限界のはず
                     enemy.addChildTo(group1);
                     enemyArray.push(enemy);
                 }
