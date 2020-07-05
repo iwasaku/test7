@@ -307,18 +307,6 @@ tm.define("GameScene", {
                     align: "center",
                 },
                 {
-                    type: "Label", name: "startLabel",
-                    x: SCREEN_CENTER_X,
-                    y: SCREEN_CENTER_Y + 80,
-                    fillStyle: "#fff",
-                    shadowColor: "#000",
-                    shadowBlur: 10,
-                    fontSize: 32,
-                    fontFamily: FONT_FAMILY,
-                    text: "TAP TO START",
-                    align: "center",
-                },
-                {
                     type: "FlatButton", name: "tweetButton",
                     init: [
                         {
@@ -368,14 +356,14 @@ tm.define("GameScene", {
         randomSeed = 3557;
         this.frame = 0;
         this.stopBGM = false;
+
+        player.status = PL_STATUS.RUN;
     },
 
     onpointingstart: function () {
         if (player.status.isDead) return;
 
         if (!player.status.isStart) {
-            this.startLabel.remove();
-            player.status = PL_STATUS.RUN;
         } else if (player.status === PL_STATUS.RUN) {
             player.status = PL_STATUS.JUMP;
             player.moveCounter = 0;
@@ -404,14 +392,14 @@ tm.define("GameScene", {
                 nowDistance = Math.floor(this.frame / app.fps);
 
                 if (this.frame % 120 === 0) {
-                    var enemy = Enemy(myRandom(7, 10));
+                    var enemy = Enemy(myRandom(8, 12)); // 最低速度は7が限界のはず
                     enemy.addChildTo(group1);
                     enemyArray.push(enemy);
                 }
 
                 // うどん
                 if (this.frame % 180 === 0) {
-                    var udon = Udon(myRandom(10, 15));
+                    var udon = Udon(myRandom(10, 20));
                     udon.addChildTo(group1);
                     udonArray.push(udon);
                 }
