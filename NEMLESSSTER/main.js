@@ -9,7 +9,7 @@ var FONT_FAMILY = "'Press Start 2P','Meiryo',sans-serif";
 var ASSETS = {
     "player": "./resource/angus_128_anim.png",
 
-    "barrel": "./resource/barrel.png",
+    "barrel": "./resource/barrel.png?20200705",
     "udon": "./resource/udon.png",
 
     "bg_gra": "./resource/bg_gra.png",
