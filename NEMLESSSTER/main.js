@@ -391,14 +391,14 @@ tm.define("GameScene", {
                 this.tmpSec = Math.floor(this.frame / app.fps);
                 nowDistance = Math.floor(this.frame / app.fps);
 
-                if (this.frame % 120 === 0) {
-                    var enemy = Enemy(myRandom(7, 12)); // 最低速度は7が限界のはず
+                if ((this.frame + 120) % 240 === 0) {
+                    var enemy = Enemy(myRandom(7, 12)); // 最低速度は7が限界、最高速度は25を超えると目押しは厳しい、30をこえると多分無理
                     enemy.addChildTo(group1);
                     enemyArray.push(enemy);
                 }
 
                 // うどん
-                if (this.frame % 180 === 0) {
+                if (this.frame % 240 === 0) {
                     var udon = Udon(myRandom(10, 20));
                     udon.addChildTo(group1);
                     udonArray.push(udon);
@@ -509,6 +509,14 @@ tm.define("Player", {
 /*
  * Enemey
  */
+const testTable = [
+    240,
+    250,
+    260,
+    270,
+    300,
+    320,
+];
 tm.define("Enemy", {
     superClass: "tm.app.Sprite",
 
@@ -525,6 +533,7 @@ tm.define("Enemy", {
         this.vec = tm.geom.Vector2(0, 0);
         this.position.set(SCREEN_WIDTH + 128, floorYPos + 64);
         this.rotation = 0;
+        this.testFlag = true;
     },
 
     update: function (app) {
@@ -544,6 +553,22 @@ tm.define("Enemy", {
         if (this.isHitElement(player)) {
             player.status = PL_STATUS.DEAD;
             player.gotoAndPlay("dead");
+        }
+
+        if (this.testFlag) {
+            if (player.status === PL_STATUS.RUN) {
+                if (false) {
+                    var len = Math.sqrt(Math.pow(player.x - this.x, 2) + Math.pow(player.y - this.y, 2));
+                    if (len < testTable[-this.xSpd - 7]) {
+                        player.status = PL_STATUS.JUMP;
+                        player.moveCounter = 0;
+                        player.gotoAndPlay("jump0");
+                        this.testFlag = false;
+                    }
+                } else {
+                    this.testFlag = false;
+                }
+            }
         }
     },
 });
