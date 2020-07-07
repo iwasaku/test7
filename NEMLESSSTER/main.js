@@ -16,7 +16,8 @@ var ASSETS = {
     "bg_sky": "./resource/bg_sky.png",
     "bg_floor": "./resource/bg_floor.png",
 
-    "fallSE": "https://iwasaku.github.io/test3/SHU/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
+    "fallSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
+    "coinSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
     //"fallSE": "./resource/fall.mp3",
 };
 
@@ -616,6 +617,7 @@ tm.define("Udon", {
 
         // 自機との衝突判定
         if (this.isHitElement(player)) {
+            tm.asset.AssetManager.get("coinSE").clone().play();
             var tmp = parseInt(nowDistance / 10.0); // 走破距離の1/10が饂飩点
             nowScore += (tmp + 1);
             this.remove();
