@@ -200,6 +200,16 @@ tm.define("TitleScene", {
                     align: "center",
                 },
                 {
+                    type: "Label", name: "subTitleLabel",
+                    x: SCREEN_CENTER_X + 324,
+                    y: 408,
+                    fillStyle: "#fff",
+                    fontSize: 16,
+                    fontFamily: FONT_FAMILY,
+                    text: "1.1",
+                    align: "center",
+                },
+                {
                     type: "FlatButton", name: "startButton",
                     init: [
                         {
