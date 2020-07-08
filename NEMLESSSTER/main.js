@@ -16,8 +16,10 @@ var ASSETS = {
     "bg_sky": "./resource/bg_sky.png",
     "bg_floor": "./resource/bg_floor.png",
 
+    "silentSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/silent.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
     "fallSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
     "coinSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
+    "silentSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/silent.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
     //"fallSE": "./resource/fall.mp3",
 };
 
