@@ -17,7 +17,7 @@ var ASSETS = {
     "bg_floor": "./resource/bg_floor.png",
 };
 const fallSE = new Howl({
-    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3'
+    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3?20200708'
 });
 const coinSE = new Howl({
     src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
