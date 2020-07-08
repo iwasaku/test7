@@ -23,8 +23,7 @@ const coinSE = new Howl({
     src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
 });
 const jumpSE = new Howl({
-    //src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/jump.mp3'
-    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
+    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/jump.mp3'
 });
 
 // 定義
