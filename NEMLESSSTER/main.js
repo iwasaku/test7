@@ -15,13 +15,17 @@ var ASSETS = {
     "bg_gra": "./resource/bg_gra.png",
     "bg_sky": "./resource/bg_sky.png",
     "bg_floor": "./resource/bg_floor.png",
-
-    "silentSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/silent.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
-    "fallSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
-    "coinSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
-    "silentSE": "https://iwasaku.github.io/test7/NEMLESSSTER/resource/silent.mp3",    // 開発時用（mp3はfile://でのアクセスが拒否されるので、https://経由にする）
-    //"fallSE": "./resource/fall.mp3",
 };
+const fallSE = new Howl({
+    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3'
+});
+const coinSE = new Howl({
+    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
+});
+const jumpSE = new Howl({
+    //src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/jump.mp3'
+    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
+});
 
 // 定義
 var PL_STATUS = defineEnum({
@@ -381,6 +385,7 @@ tm.define("GameScene", {
             player.status = PL_STATUS.JUMP;
             player.moveCounter = 0;
             player.gotoAndPlay("jump0");
+            jumpSE.play();
         }
 
     },
@@ -422,7 +427,8 @@ tm.define("GameScene", {
 
         } else {
             if (!this.stopBGM) {
-                tm.asset.AssetManager.get("fallSE").clone().play();
+                fallSE.play();
+                //tm.asset.AssetManager.get("fallSE").clone().play();
                 this.stopBGM = true;
 
                 var self = this;
@@ -619,9 +625,9 @@ tm.define("Udon", {
 
         // 自機との衝突判定
         if (this.isHitElement(player)) {
-            tm.asset.AssetManager.get("coinSE").clone().play();
-            var tmp = parseInt(nowDistance / 10.0); // 走破距離の1/10が饂飩点
-            nowScore += (tmp + 1);
+            //tm.asset.AssetManager.get("coinSE").clone().play();
+            coinSE.play();
+            nowScore += (parseInt(nowDistance / 10.0) + 1); // 走破距離の(1/10)+1が饂飩点
             this.remove();
         }
     },
