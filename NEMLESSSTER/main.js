@@ -384,7 +384,7 @@ tm.define("GameScene", {
             player.status = PL_STATUS.JUMP;
             player.moveCounter = 0;
             player.gotoAndPlay("jump0");
-            jumpSE.play();
+            //            jumpSE.play();
         }
 
     },
