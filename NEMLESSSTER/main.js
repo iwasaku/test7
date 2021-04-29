@@ -160,7 +160,7 @@ tm.define("LogoScene", {
                     fillStyle: "#888",
                     fontSize: 64,
                     fontFamily: FONT_FAMILY,
-                    text: "",
+                    text: "UNOFFICIAL GAME",
                     align: "center",
                 },
             ]
