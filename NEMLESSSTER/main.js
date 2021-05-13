@@ -445,7 +445,7 @@ tm.define("GameScene", {
                         type: "tweet",
                         text: "NEMLESSSTER スコア: " + self.nowScoreLabel.text + " (距離: " + nowDistance + "m)",
                         hashtags: ["ネムレス", "NEMLESSS"],
-                        url: "https://iwasaku.github.io/test7/NEMLESSSTER/index.html",
+                        url: "https://iwasaku.github.io/test7/NEMLESSSTER/",
                     });
                     window.open(twitterURL);
                 };
