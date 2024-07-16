@@ -1,30 +1,65 @@
-console.log = function () { };  // ログを出す時にはコメントアウトする
+phina.globalize();
 
-var SCREEN_WIDTH = 1136;              // スクリーン幅
-var SCREEN_HEIGHT = 640;              // スクリーン高さ
-var SCREEN_CENTER_X = SCREEN_WIDTH / 2;   // スクリーン幅の半分
-var SCREEN_CENTER_Y = SCREEN_HEIGHT / 2;  // スクリーン高さの半分
+//console.log = function () { }; // ログを出す時にはコメントアウトする
+
+var SCREEN_WIDTH = 1136;       // スクリーン幅
+var SCREEN_HEIGHT = 640;       // スクリーン高さ
+var SCREEN_CENTER_X = SCREEN_WIDTH / 2;  // スクリーン幅の半分
+var SCREEN_CENTER_Y = SCREEN_HEIGHT / 2; // スクリーン高さの半分
 
 var FONT_FAMILY = "'Press Start 2P','Meiryo',sans-serif";
 var ASSETS = {
-    "player": "./resource/angus_128_anim.png",
+    image: {
+        "player": "./resource/angus_128_anim.png",
 
-    "barrel": "./resource/barrel.png?20200705",
-    "udon": "./resource/udon.png",
+        "barrel": "./resource/barrel.png?20200705",
+        "udon": "./resource/udon.png",
 
-    "bg_gra": "./resource/bg_gra.png",
-    "bg_sky": "./resource/bg_sky.png",
-    "bg_floor": "./resource/bg_floor.png",
+        "bg_gra": "./resource/bg_gra.png",
+        "bg_sky": "./resource/bg_sky.png",
+        "bg_floor": "./resource/bg_floor.png",
+    },
+    spritesheet: {
+        "player_ss":
+        {
+            // フレーム情報
+            "frame": {
+                "width": 128, // 1フレームの画像サイズ（横）
+                "height": 128, // 1フレームの画像サイズ（縦）
+                "cols": 4, // フレーム数（横）
+                "rows": 1, // フレーム数（縦）
+            },
+            // アニメーション情報
+            "animations": {
+                "run": { // アニメーション名
+                    "frames": [0, 1, 2], // フレーム番号範囲[0,1,2]の形式でもOK
+                    "next": "run", // 次のアニメーション。空文字列なら終了。同じアニメーション名ならループ
+                    "frequency": 10, // アニメーション間隔
+                },
+                "jump0": { // アニメーション名
+                    "frames": [2, 3], // フレーム番号範囲[0,1,2]の形式でもOK
+                    "next": "jump1", // 次のアニメーション。空文字列なら終了。同じアニメーション名ならループ
+                    "frequency": 13, // アニメーション間隔
+                },
+                "jump1": { // アニメーション名
+                    "frames": [0, 1], // フレーム番号範囲[0,1,2]の形式でもOK
+                    "next": "run", // 次のアニメーション。空文字列なら終了。同じアニメーション名ならループ
+                    "frequency": 1, // アニメーション間隔
+                },
+                "dead": { // アニメーション名
+                    "frames": [0], // フレーム番号範囲[0,1,2]の形式でもOK
+                    "next": "dead", // 次のアニメーション。空文字列なら終了。同じアニメーション名ならループ
+                    "frequency": 1, // アニメーション間隔
+                },
+            }
+        },
+    },
+    sound: {
+        "fall_se": './resource/fall.mp3',
+        "coin_se": './resource/coin05.mp3',
+        "jump_se": './resource/jump.mp3',
+    }
 };
-const fallSE = new Howl({
-    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/fall.mp3?20200708'
-});
-const coinSE = new Howl({
-    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/coin05.mp3'
-});
-const jumpSE = new Howl({
-    src: 'https://iwasaku.github.io/test7/NEMLESSSTER/resource/jump.mp3'
-});
 
 // 定義
 var PL_STATUS = defineEnum({
@@ -116,258 +151,315 @@ var udonArray = [];
 var nowScore = 0;
 var nowDistance = 0;
 var totalSec = 0;
-var fitWindowTimer = 0;
 
 var randomSeed = 3557;
 
-tm.main(function () {
-    // アプリケーションクラスを生成
-    var app = tm.display.CanvasApp("#world");
-    app.resize(SCREEN_WIDTH, SCREEN_HEIGHT);    // サイズ(解像度)設定
-    app.fitWindow(false);                       // 手動フィッティング
-    app.background = "rgba(77, 136, 255, 1.0)"; // 背景色
-    app.fps = 60;                               // フレーム数
-
-    var loading = tm.ui.LoadingScene({
-        assets: ASSETS,
+phina.main(function () {
+    var app = GameApp({
+        startLabel: 'logo',
         width: SCREEN_WIDTH,
         height: SCREEN_HEIGHT,
+        assets: ASSETS,
+        fps: 60,
+        // シーンのリストを引数で渡す
+        scenes: [
+            {
+                className: 'LogoScene',
+                label: 'logo',
+                nextLabel: 'title',
+            },
+            {
+                className: 'TitleScene',
+                label: 'title',
+                nextLabel: 'game',
+            },
+            {
+                className: 'GameScene',
+                label: 'game',
+                nextLabel: 'game',
+            },
+        ]
     });
 
-    // 読み込み完了後に呼ばれるメソッドを登録
-    loading.onload = function () {
-        app.replaceScene(LogoScene());
-    };
+    // iOSなどでユーザー操作がないと音がならない仕様対策
+    // 起動後初めて画面をタッチした時に『無音』を鳴らす
+    app.domElement.addEventListener('touchend', function dummy() {
+        var s = phina.asset.Sound();
+        s.loadFromBuffer();
+        s.play().stop();
+        app.domElement.removeEventListener('touchend', dummy);
+    });
 
-    // ローディングシーンに入れ替える
-    app.replaceScene(loading);
+    // fps表示
+    //app.enableStats();
 
     // 実行
     app.run();
 });
 
 /*
+* ローディング画面をオーバーライド
+*/
+phina.define('LoadingScene', {
+    superClass: 'DisplayScene',
+
+    init: function (options) {
+        this.superInit(options);
+        this.backgroundColor = 'black';
+
+        var self = this;
+        var loader = phina.asset.AssetLoader();
+
+        // 明滅するラベル
+        let label = phina.display.Label({
+            text: "",
+            fontSize: 64,
+            fill: 'white',
+        }).addChildTo(this).setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
+
+        // ロードが進行したときの処理
+        loader.onprogress = function (e) {
+            // 進捗具合を％で表示する
+            label.text = "{0}%".format((e.progress * 100).toFixed(0));
+        };
+
+        // ローダーによるロード完了ハンドラ
+        loader.onload = function () {
+            // Appコアにロード完了を伝える（==次のSceneへ移行）
+            self.flare('loaded');
+        };
+
+        // ロード開始
+        loader.load(options.assets);
+    },
+
+});
+
+/*
  * ロゴ
  */
-tm.define("LogoScene", {
-    superClass: "tm.app.Scene",
+phina.define("LogoScene", {
+    superClass: 'DisplayScene',
 
-    init: function () {
-        this.superInit();
-        this.fromJSON({
-            children: [
-                {
-                    type: "Label", name: "logoLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 320,
-                    fillStyle: "#888",
-                    fontSize: 64,
-                    fontFamily: FONT_FAMILY,
-                    text: "UNOFFICIAL GAME",
-                    align: "center",
-                },
-            ]
-        });
+    init: function (option) {
+        this.superInit(option);
+        this.backgroundColor = 'black';
+
+        logoLabel = Label({
+            text: "",
+            fontSize: 64,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#888",
+            x: SCREEN_CENTER_X,
+            y: 320,
+        }).addChildTo(this);
         this.localTimer = 0;
     },
 
     update: function (app) {
         // 時間が来たらタイトルへ
-        //        if(++this.localTimer >= 5*app.fps)
-        this.app.replaceScene(TitleScene());
-        app.fitWindow(false);                       // 手動フィッティング
+        //    if(++this.localTimer >= 5*app.fps)
+        this.exit();
     }
 });
 
 /*
  * タイトル
  */
-tm.define("TitleScene", {
-    superClass: "tm.app.Scene",
+phina.define("TitleScene", {
+    superClass: 'DisplayScene',
 
-    init: function () {
-        this.superInit();
-        this.fromJSON({
-            children: [
-                {
-                    type: "Label", name: "titleLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 320,
-                    fillStyle: "#fff",
-                    fontSize: 64,
-                    fontFamily: FONT_FAMILY,
-                    text: "NEMLESSSTER",
-                    align: "center",
-                },
-                {
-                    type: "Label", name: "subTitleLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 400,
-                    fillStyle: "#fff",
-                    fontSize: 48,
-                    fontFamily: FONT_FAMILY,
-                    text: "the Unlikely",
-                    align: "center",
-                },
-                {
-                    type: "Label", name: "subTitleLabel",
-                    x: SCREEN_CENTER_X + 324,
-                    y: 408,
-                    fillStyle: "#fff",
-                    fontSize: 16,
-                    fontFamily: FONT_FAMILY,
-                    text: "1.1",
-                    align: "center",
-                },
-                {
-                    type: "FlatButton", name: "startButton",
-                    init: [
-                        {
-                            text: "START",
-                            fontFamily: FONT_FAMILY,
-                            fontSize: 32,
-                            bgColor: "hsl(240, 0%, 70%)",
-                        }
-                    ],
-                    x: SCREEN_CENTER_X,
-                    y: 580,
-                },
-            ]
-        });
-        this.localTimer = 0;
+    init: function (option) {
+        this.superInit(option);
+        this.backgroundColor = 'black';
 
+        this.titleLabel = Label({
+            text: "NEMLESSSTER",
+            fontSize: 64,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            x: SCREEN_CENTER_X,
+            y: 320,
+        }).addChildTo(this);
+
+        this.subTitleLabel = Label({
+            text: "the Unlikely",
+            fontSize: 48,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            x: SCREEN_CENTER_X,
+            y: 400,
+        }).addChildTo(this);
+
+        this.verLabel = Label({
+            text: "1.2",
+            fontSize: 16,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            x: SCREEN_CENTER_X + 324,
+            y: 408,
+        }).addChildTo(this);
+
+        this.startButton = Button({
+            text: "START",
+            fontFamily: FONT_FAMILY,
+            fontSize: 32,
+            fill: "#444",
+            x: SCREEN_CENTER_X,
+            y: 580,
+        }).addChildTo(this);
         var self = this;
-        this.startButton.onpointingstart = function () {
-            self.app.replaceScene(GameScene());
+        this.startButton.onpush = function () {
+            self.exit();
         };
+
+        this.localTimer = 0;
     },
 
     update: function (app) {
-        app.background = "rgba(0, 0, 0, 1.0)"; // 背景色
-        app.fitWindow(false);                       // 手動フィッティング
     }
 });
 
 /*
  * ゲーム
  */
-tm.define("GameScene", {
-    superClass: "tm.app.Scene",
+phina.define("GameScene", {
+    superClass: 'DisplayScene',
 
-    init: function () {
-        this.superInit();
+    init: function (option) {
+        this.superInit(option);
+        this.backgroundColor = 'black';
 
-        group0 = tm.display.CanvasElement().addChildTo(this);
-        group1 = tm.display.CanvasElement().addChildTo(this);
-        group2 = tm.display.CanvasElement().addChildTo(this);
+        group0 = DisplayElement().addChildTo(this);
+        group1 = DisplayElement().addChildTo(this);
+        group2 = DisplayElement().addChildTo(this);
 
-        this.bgGradation = tm.display.Sprite("bg_gra", SCREEN_WIDTH, SCREEN_HEIGHT).addChildTo(group0);
+        this.bgGradation = phina.display.Sprite("bg_gra").addChildTo(group0);
+        this.bgGradation.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
         this.bgGradation.setPosition(SCREEN_CENTER_X, SCREEN_CENTER_Y);
 
-        this.bgFloor0 = tm.display.Sprite("bg_floor").addChildTo(group2);
+        this.bgFloor0 = phina.display.Sprite("bg_floor").addChildTo(group2);
         this.bgFloor0.setPosition(bgFloorX, bgFloorY);
-        this.bgFloor1 = tm.display.Sprite("bg_floor").addChildTo(group2);
+        this.bgFloor1 = phina.display.Sprite("bg_floor").addChildTo(group2);
         this.bgFloor1.setPosition(bgFloorX + SCREEN_WIDTH, bgFloorY);
 
-        this.bgSky0 = tm.display.Sprite("bg_sky").addChildTo(group0);
+        this.bgSky0 = phina.display.Sprite("bg_sky").addChildTo(group0);
         this.bgSky0.setPosition(bgSkyX, bgSkyY);
-        this.bgSky1 = tm.display.Sprite("bg_sky").addChildTo(group0);
+        this.bgSky1 = phina.display.Sprite("bg_sky").addChildTo(group0);
         this.bgSky1.setPosition(bgSkyX + SCREEN_WIDTH, bgSkyY);
 
         clearArrays();
         player = new Player().addChildTo(group1);
 
-        this.fromJSON({
-            children: [
-                {
-                    type: "Label", name: "nowScoreLabel",
-                    x: SCREEN_WIDTH - 16,
-                    y: 32,
-                    fillStyle: "#fff",
-                    shadowColor: "#000",
-                    shadowBlur: 10,
-                    fontSize: 32,
-                    fontFamily: FONT_FAMILY,
-                    text: "0",
-                    align: "right",
-                },
-                {
-                    type: "Label", name: "gameOverLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 280,
-                    fillStyle: "#fff",
-                    shadowColor: "#000",
-                    shadowBlur: 10,
-                    fontSize: 64,
-                    fontFamily: FONT_FAMILY,
-                    text: "GAME OVER",
-                    align: "center",
-                },
-                {
-                    type: "Label", name: "gameOverScoreLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 350,
-                    fillStyle: "#fff",
-                    shadowColor: "#000",
-                    shadowBlur: 10,
-                    fontSize: 32,
-                    fontFamily: FONT_FAMILY,
-                    text: "",
-                    align: "center",
-                },
-                {
-                    type: "Label", name: "gameOverDistanceLabel",
-                    x: SCREEN_CENTER_X,
-                    y: 400,
-                    fillStyle: "#fff",
-                    shadowColor: "#000",
-                    shadowBlur: 10,
-                    fontSize: 32,
-                    fontFamily: FONT_FAMILY,
-                    text: "",
-                    align: "center",
-                },
-                {
-                    type: "FlatButton", name: "tweetButton",
-                    init: [
-                        {
-                            text: "TWEET",
-                            fontFamily: FONT_FAMILY,
-                            fontSize: 32,
-                            bgColor: "hsl(240, 80%, 70%)",
-                        }
-                    ],
-                    x: SCREEN_CENTER_X - 160,
-                    y: 580,
-                    alpha: 0.0,
-                },
-                {
-                    type: "FlatButton", name: "restartButton",
-                    init: [
-                        {
-                            text: "RESTART",
-                            fontFamily: FONT_FAMILY,
-                            fontSize: 32,
-                            cornerRadius: 8,
-                            bgColor: "hsl(240, 0%, 70%)",
-                        }
-                    ],
-                    x: SCREEN_CENTER_X + 160,
-                    y: 580,
-                    alpha: 0.0,
-                },
-            ]
-        });
+        this.nowScoreLabel = Label({
+            text: "0",
+            fontSize: 32,
+            fontFamily: FONT_FAMILY,
+            align: "right",
+            fill: "#fff",
+            shadow: "#000",
+            shadowBlur: 10,
+            x: SCREEN_WIDTH - 16,
+            y: 32,
+        }).addChildTo(this);
+        this.gameOverLabel = Label({
+            text: "GAME OVER",
+            fontSize: 64,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            shadow: "#000",
+            shadowBlur: 10,
+            x: SCREEN_CENTER_X,
+            y: 280,
+        }).addChildTo(this);
+        this.gameOverScoreLabel = Label({
+            text: "",
+            fontSize: 32,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            shadow: "#000",
+            shadowBlur: 10,
+            x: SCREEN_CENTER_X,
+            y: 350,
+        }).addChildTo(this);
+        this.gameOverDistanceLabel = Label({
+            text: "",
+            fontSize: 32,
+            fontFamily: FONT_FAMILY,
+            align: "center",
+            fill: "#fff",
+            shadow: "#000",
+            shadowBlur: 10,
+            x: SCREEN_CENTER_X,
+            y: 400,
+        }).addChildTo(this);
 
-        this.gameOverLabel.setAlpha(0.0);
-        this.gameOverScoreLabel.setAlpha(0.0);
-        this.gameOverDistanceLabel.setAlpha(0.0);
+        this.screenButton = Button({
+            text: "",
+            fontSize: 32,
+            fontFamily: FONT_FAMILY,
+            fill: "#444",
+            x: SCREEN_CENTER_X,
+            y: SCREEN_CENTER_Y,
+            width: SCREEN_WIDTH,
+            height: SCREEN_HEIGHT,
+        }).addChildTo(group2)
+
+        this.tweetButton = Button({
+            text: "POST",
+            fontFamily: FONT_FAMILY,
+            fontSize: 32,
+            cornerRadius: 8,
+            fill: "#7575EF", // ボタン色
+            x: SCREEN_CENTER_X - 160,
+            y: 580,
+            width: 240,
+            height: 60,
+        }).addChildTo(this);
+        this.restartButton = Button({
+            text: "RESTART",
+            fontFamily: FONT_FAMILY,
+            fontSize: 32,
+            cornerRadius: 8,
+            fill: "#B2B2B2",
+            x: SCREEN_CENTER_X + 160,
+            y: 580,
+            width: 240,
+            height: 60,
+        }).addChildTo(this);
+
+        this.gameOverLabel.alpha = 0.0;
+        this.gameOverScoreLabel.alpha = 0.0;
+        this.gameOverDistanceLabel.alpha = 0.0;
+        this.screenButton.alpha = 0.0;
+        this.tweetButton.alpha = 0.0;
         this.tweetButton.sleep();
+        this.restartButton.alpha = 0.0;
         this.restartButton.sleep();
 
         var self = this;
-        this.restartButton.onpointingstart = function () {
-            self.app.replaceScene(GameScene());
+
+        this.screenButton.onpointstart = function () {
+            if (player.status.isDead) return;
+
+            if (!player.status.isStart) {
+            } else if (player.status === PL_STATUS.RUN) {
+                player.status = PL_STATUS.JUMP;
+                player.moveCounter = 0;
+                player.anim.gotoAndPlay("jump0");
+                SoundManager.play("jump_se");
+            }
+
+        };
+
+        this.restartButton.onpush = function () {
+            self.exit();
         };
 
         this.buttonAlpha = 0.0;
@@ -375,7 +467,6 @@ tm.define("GameScene", {
         nowScore = 0;
         nowDistance = 0;
         randomSeed = 3557;
-        fitWindowTimer = 0;
 
         this.frame = 0;
         this.stopBGM = false;
@@ -383,21 +474,7 @@ tm.define("GameScene", {
         player.status = PL_STATUS.RUN;
     },
 
-    onpointingstart: function () {
-        if (player.status.isDead) return;
-
-        if (!player.status.isStart) {
-        } else if (player.status === PL_STATUS.RUN) {
-            player.status = PL_STATUS.JUMP;
-            player.moveCounter = 0;
-            player.gotoAndPlay("jump0");
-            jumpSE.play();
-        }
-
-    },
-
     update: function (app) {
-        if (++fitWindowTimer % 15 === 0) app.fitWindow(false);    // 手動フィッティング
         if (!player.status.isDead) {
             // 床スクロール
             bgFloorX -= 6;
@@ -417,7 +494,7 @@ tm.define("GameScene", {
                 nowDistance = Math.floor(this.frame / app.fps);
 
                 if ((this.frame + 120) % 240 === 0) {
-                    var enemy = Enemy(myRandom(7, 12)); // 最低速度は7が限界、最高速度は25を超えると目押しは厳しい、30をこえると多分無理
+                    var enemy = Enemy(myRandom(7, 20)); // 最低速度は7が限界、最高速度は25を超えると目押しは厳しい、30をこえると多分無理
                     enemy.addChildTo(group1);
                     enemyArray.push(enemy);
                 }
@@ -434,16 +511,15 @@ tm.define("GameScene", {
 
         } else {
             if (!this.stopBGM) {
-                fallSE.play();
-                //tm.asset.AssetManager.get("fallSE").clone().play();
+                SoundManager.play("fall_se");
                 this.stopBGM = true;
 
                 var self = this;
                 // tweet ボタン
                 this.tweetButton.onclick = function () {
-                    var twitterURL = tm.social.Twitter.createURL({
+                    var twitterURL = phina.social.Twitter.createURL({
                         type: "tweet",
-                        text: "NEMLESSSTER スコア: " + self.nowScoreLabel.text + " (距離: " + nowDistance + "m)",
+                        text: "NEMLESSSTER スコア: " + self.nowScoreLabel.text + " (距離: " + nowDistance + "m)\n",
                         hashtags: ["ネムレス", "NEMLESSS"],
                         url: "https://iwasaku.github.io/test7/NEMLESSSTER/",
                     });
@@ -455,13 +531,13 @@ tm.define("GameScene", {
             if (this.buttonAlpha > 1.0) {
                 this.buttonAlpha = 1.0;
             }
-            this.gameOverLabel.setAlpha(this.buttonAlpha);
+            this.gameOverLabel.alpha = this.buttonAlpha;
             this.gameOverScoreLabel.text = "SCORE:" + this.nowScoreLabel.text;
-            this.gameOverScoreLabel.setAlpha(this.buttonAlpha);
+            this.gameOverScoreLabel.alpha = this.buttonAlpha;
             this.gameOverDistanceLabel.text = "DISTANCE:" + nowDistance + "m";
-            this.gameOverDistanceLabel.setAlpha(this.buttonAlpha);
-            this.tweetButton.setAlpha(this.buttonAlpha);
-            this.restartButton.setAlpha(this.buttonAlpha);
+            this.gameOverDistanceLabel.alpha = this.buttonAlpha;
+            this.tweetButton.alpha = this.buttonAlpha;
+            this.restartButton.alpha = this.buttonAlpha;
             if (this.buttonAlpha > 0.7) {
                 this.tweetButton.wakeUp();
                 this.restartButton.wakeUp();
@@ -473,29 +549,17 @@ tm.define("GameScene", {
 /*
  * Player
  */
-tm.define("Player", {
-    superClass: "tm.app.AnimationSprite",
+phina.define("Player", {
+    superClass: 'Sprite',
 
-    init: function () {
-        var ss = tm.asset.SpriteSheet({
-            // 画像
-            image: "player",
-            // １コマのサイズ指定および全コマ数
-            frame: {
-                width: 128,
-                height: 128,
-                count: 4
-            },
-            // アニメーションの定義（開始コマ、終了コマ、次のアニメーション）
-            animations: {
-                "run": [0, 2, "run", 10],
-                "jump0": [2, 3, "jump1", 13],
-                "jump1": [0, 1, "run", 1],
-                "dead": [0, 1, "dead", 1],
-            }
-        });
+    init: function (option) {
+        this.superInit("player", 256, 256);
+        this.anim = FrameAnimation('player_ss').attachTo(this);
+        // スプライトシートのサイズにフィットさせない
+        this.anim.fit = false;
+        //アニメーションを再生する
+        this.anim.gotoAndPlay('run');
 
-        this.superInit(ss, 256, 256);
         this.direct = '';
         this.zRot = 0;
         this.setPosition(192, floorYPos).setScale(1, 1);
@@ -505,7 +569,6 @@ tm.define("Player", {
 
         this.status = PL_STATUS.INIT;
         this.moveCounter = 0;
-        this.gotoAndPlay("run");
     },
 
     update: function (app) {
@@ -537,27 +600,36 @@ tm.define("Player", {
  */
 const testTable = [
     240,
-    250,
-    260,
-    270,
-    300,
-    320,
+    250 + 10,
+    260 + 10,
+    270 + 10,
+    300 + 10,
+    320 + 10,
+    340 + 10,
+    360 + 10,
+    380 + 10,
+    400 + 10,
+    420 + 10,
+    440 + 10,
+    460 + 10,
+    480 + 10,
 ];
-tm.define("Enemy", {
-    superClass: "tm.app.Sprite",
+phina.define("Enemy", {
+    superClass: "Sprite",
 
     init: function (spd) {
         this.spriteName = "barrel";
         this.xSpd = -spd;
+        console.log(spd);
         this.zRotSpd = this.xSpd / 2;
-        this.superInit(this.spriteName, 128, 128);
+        this.superInit(this.spriteName);
         this.direct = '';
         this.setInteractive(false);
         this.setBoundingType("circle");
-        this.radius = 64;
+        this.radius = 32;
 
-        this.vec = tm.geom.Vector2(0, 0);
-        this.position.set(SCREEN_WIDTH + 128, floorYPos + 64);
+        this.vec = phina.geom.Vector2(0, 0);
+        this.setPosition(SCREEN_WIDTH + 128, floorYPos + 64).setSize(128, 128);
         this.rotation = 0;
         this.testFlag = true;
     },
@@ -576,9 +648,9 @@ tm.define("Enemy", {
         }
 
         // 自機との衝突判定
-        if (this.isHitElement(player)) {
+        if (this.hitTestElement(player)) {
             player.status = PL_STATUS.DEAD;
-            player.gotoAndPlay("dead");
+            player.anim.gotoAndPlay("dead");
         }
 
         if (this.testFlag) {
@@ -588,7 +660,7 @@ tm.define("Enemy", {
                     if (len < testTable[-this.xSpd - 7]) {
                         player.status = PL_STATUS.JUMP;
                         player.moveCounter = 0;
-                        player.gotoAndPlay("jump0");
+                        player.anim.gotoAndPlay("jump0");
                         this.testFlag = false;
                     }
                 } else {
@@ -602,20 +674,19 @@ tm.define("Enemy", {
 /*
  * Udon
  */
-tm.define("Udon", {
-    superClass: "tm.app.Sprite",
+phina.define("Udon", {
+    superClass: "Sprite",
 
     init: function (spd) {
-        this.spriteName = "udon";
         this.xSpd = -spd;
-        this.superInit(this.spriteName, 80, 80);
+        this.superInit("udon");
         this.direct = '';
         this.setInteractive(false);
         this.setBoundingType("circle");
         this.radius = 64;
 
-        this.vec = tm.geom.Vector2(0, 0);
-        this.position.set(SCREEN_WIDTH + 128, SCREEN_CENTER_Y - 192);
+        this.vec = phina.geom.Vector2(0, 0);
+        this.setPosition(SCREEN_WIDTH + 128, SCREEN_CENTER_Y - 192).setSize(80, 80);
     },
 
     update: function (app) {
@@ -631,9 +702,8 @@ tm.define("Udon", {
         }
 
         // 自機との衝突判定
-        if (this.isHitElement(player)) {
-            //tm.asset.AssetManager.get("coinSE").clone().play();
-            coinSE.play();
+        if (this.hitTestElement(player)) {
+            SoundManager.play("coin_se");
             nowScore += (parseInt(nowDistance / 10.0) + 1); // 走破距離の(1/10)+1が饂飩点
             this.remove();
         }
@@ -667,6 +737,10 @@ function abs(val) {
 function myRandom(start, end) {
     var mod = (end - start) + 1;
     randomSeed = (randomSeed * 5) + 1;
+    for (; ;) {
+        if (randomSeed < 2147483647) break;
+        randomSeed -= 2147483647;
+    }
     return (randomSeed % mod) + start;
 }
 
