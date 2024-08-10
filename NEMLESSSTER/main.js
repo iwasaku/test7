@@ -161,6 +161,8 @@ phina.main(function () {
         height: SCREEN_HEIGHT,
         assets: ASSETS,
         fps: 60,
+        backgroundColor: 'black',
+
         // シーンのリストを引数で渡す
         scenes: [
             {
@@ -205,7 +207,6 @@ phina.define('LoadingScene', {
 
     init: function (options) {
         this.superInit(options);
-        this.backgroundColor = 'black';
 
         var self = this;
         var loader = phina.asset.AssetLoader();
@@ -243,24 +244,15 @@ phina.define("LogoScene", {
 
     init: function (option) {
         this.superInit(option);
-        this.backgroundColor = 'black';
-
-        logoLabel = Label({
-            text: "",
-            fontSize: 64,
-            fontFamily: FONT_FAMILY,
-            align: "center",
-            fill: "#888",
-            x: SCREEN_CENTER_X,
-            y: 320,
-        }).addChildTo(this);
         this.localTimer = 0;
     },
 
     update: function (app) {
-        // 時間が来たらタイトルへ
-        //    if(++this.localTimer >= 5*app.fps)
-        this.exit();
+        // フォント読み込み待ち
+        var self = this;
+        document.fonts.load('12px "Press Start 2P"').then(function () {
+            self.exit();
+        });
     }
 });
 
@@ -272,7 +264,6 @@ phina.define("TitleScene", {
 
     init: function (option) {
         this.superInit(option);
-        this.backgroundColor = 'black';
 
         this.titleLabel = Label({
             text: "NEMLESSSTER",
@@ -332,7 +323,6 @@ phina.define("GameScene", {
 
     init: function (option) {
         this.superInit(option);
-        this.backgroundColor = 'black';
 
         group0 = DisplayElement().addChildTo(this);
         group1 = DisplayElement().addChildTo(this);
