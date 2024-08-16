@@ -154,6 +154,11 @@ var totalSec = 0;
 
 var randomSeed = 3557;
 
+// 共有ボタン用
+let postText = null;
+const postURL = "https://iwasaku.github.io/test7/NEMLESSSTER/";
+const postTags = "#ネムレス #NEMLESSS";
+
 phina.main(function () {
     var app = GameApp({
         startLabel: 'logo',
@@ -245,14 +250,22 @@ phina.define("LogoScene", {
     init: function (option) {
         this.superInit(option);
         this.localTimer = 0;
+        this.font1 = false;
+        this.font2 = false;
     },
 
     update: function (app) {
-        // フォント読み込み待ち
+        // フォントロード完了待ち
         var self = this;
-        document.fonts.load('12px "Press Start 2P"').then(function () {
-            self.exit();
+        document.fonts.load('10pt "Press Start 2P"').then(function () {
+            self.font1 = true;
         });
+        document.fonts.load('10pt "icomoon"').then(function () {
+            self.font2 = true;
+        });
+        if (this.font1 && this.font2) {
+            self.exit();
+        }
     }
 });
 
@@ -401,17 +414,67 @@ phina.define("GameScene", {
             height: SCREEN_HEIGHT,
         }).addChildTo(group2)
 
-        this.tweetButton = Button({
-            text: "POST",
-            fontFamily: FONT_FAMILY,
+        // X
+        this.xButton = Button({
+            text: String.fromCharCode(0xe902),
             fontSize: 32,
+            fontFamily: "icomoon",
+            fill: "#7575EF",
+            x: SCREEN_CENTER_X - 160 - 80,
+            y: 580,
             cornerRadius: 8,
-            fill: "#7575EF", // ボタン色
+            width: 60,
+            height: 60,
+        }).addChildTo(group2);
+        this.xButton.onclick = function () {
+            // https://developer.x.com/en/docs/twitter-for-websites/tweet-button/guides/web-intent
+            let shareURL = "https://x.com/intent/tweet?text=" + encodeURIComponent(postText + "\n" + postTags + "\n") + "&url=" + encodeURIComponent(postURL);
+            window.open(shareURL);
+        };
+        this.xButton.alpha = 0.0;
+        this.xButton.sleep();
+
+        // threads
+        this.threadsButton = Button({
+            text: String.fromCharCode(0xe901),
+            fontSize: 32,
+            fontFamily: "icomoon",
+            fill: "#7575EF",
             x: SCREEN_CENTER_X - 160,
             y: 580,
-            width: 240,
+            cornerRadius: 8,
+            width: 60,
             height: 60,
-        }).addChildTo(this);
+        }).addChildTo(group2);
+        this.threadsButton.onclick = function () {
+            // https://developers.facebook.com/docs/threads/threads-web-intents/
+            // web intentでのハッシュタグの扱いが環境（ブラウザ、iOS、Android）によって違いすぎるので『#』を削って通常の文字列にしておく
+            let shareURL = "https://www.threads.net/intent/post?text=" + encodeURIComponent(postText + "\n\n" + postTags.replace(/#/g, "")) + "&url=" + encodeURIComponent(postURL);
+            window.open(shareURL);
+        };
+        this.threadsButton.alpha = 0.0;
+        this.threadsButton.sleep();
+
+        // bluesky
+        this.bskyButton = Button({
+            text: String.fromCharCode(0xe900),
+            fontSize: 32,
+            fontFamily: "icomoon",
+            fill: "#7575EF",
+            x: SCREEN_CENTER_X - 160 + 80,
+            y: 580,
+            cornerRadius: 8,
+            width: 60,
+            height: 60,
+        }).addChildTo(group2);
+        this.bskyButton.onclick = function () {
+            // https://docs.bsky.app/docs/advanced-guides/intent-links
+            let shareURL = "https://bsky.app/intent/compose?text=" + encodeURIComponent(postText + "\n" + postTags + "\n" + postURL);
+            window.open(shareURL);
+        };
+        this.bskyButton.alpha = 0.0;
+        this.bskyButton.sleep();
+
         this.restartButton = Button({
             text: "RESTART",
             fontFamily: FONT_FAMILY,
@@ -422,18 +485,14 @@ phina.define("GameScene", {
             y: 580,
             width: 240,
             height: 60,
-        }).addChildTo(this);
+        }).addChildTo(group2);
 
         this.gameOverLabel.alpha = 0.0;
         this.gameOverScoreLabel.alpha = 0.0;
         this.gameOverDistanceLabel.alpha = 0.0;
         this.screenButton.alpha = 0.0;
-        this.tweetButton.alpha = 0.0;
-        this.tweetButton.sleep();
         this.restartButton.alpha = 0.0;
         this.restartButton.sleep();
-
-        var self = this;
 
         this.screenButton.onpointstart = function () {
             if (player.status.isDead) return;
@@ -448,6 +507,7 @@ phina.define("GameScene", {
 
         };
 
+        var self = this;
         this.restartButton.onpush = function () {
             self.exit();
         };
@@ -504,17 +564,7 @@ phina.define("GameScene", {
                 SoundManager.play("fall_se");
                 this.stopBGM = true;
 
-                var self = this;
-                // tweet ボタン
-                this.tweetButton.onclick = function () {
-                    var twitterURL = phina.social.Twitter.createURL({
-                        type: "tweet",
-                        text: "NEMLESSSTER スコア: " + self.nowScoreLabel.text + " (距離: " + nowDistance + "m)\n",
-                        hashtags: ["ネムレス", "NEMLESSS"],
-                        url: "https://iwasaku.github.io/test7/NEMLESSSTER/",
-                    });
-                    window.open(twitterURL);
-                };
+                postText = "NEMLESSSTER\nスコア: " + this.nowScoreLabel.text + "\n距離: " + nowDistance + "m";
             }
 
             this.buttonAlpha += 0.05;
@@ -526,10 +576,14 @@ phina.define("GameScene", {
             this.gameOverScoreLabel.alpha = this.buttonAlpha;
             this.gameOverDistanceLabel.text = "DISTANCE:" + nowDistance + "m";
             this.gameOverDistanceLabel.alpha = this.buttonAlpha;
-            this.tweetButton.alpha = this.buttonAlpha;
+            this.xButton.alpha = this.buttonAlpha;
+            this.threadsButton.alpha = this.buttonAlpha;
+            this.bskyButton.alpha = this.buttonAlpha;
             this.restartButton.alpha = this.buttonAlpha;
             if (this.buttonAlpha > 0.7) {
-                this.tweetButton.wakeUp();
+                this.xButton.wakeUp();
+                this.threadsButton.wakeUp();
+                this.bskyButton.wakeUp();
                 this.restartButton.wakeUp();
             }
         }
